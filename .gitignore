@@ -1,0 +1,5 @@
+# Visual Studio dosyalarý
+.vs/
+bin/
+obj/
+*.csproj.user
