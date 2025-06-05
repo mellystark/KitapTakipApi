@@ -32,7 +32,9 @@ namespace KitapTakipApi.Services
                 Genre = b.Genre,
                 StartDate = b.StartDate,
                 EndDate = b.EndDate,
-                Notes = b.Notes
+                Notes = b.Notes,
+                Description = b.Description,
+                PageCount = b.PageCount
             }).ToListAsync();
 
             return new ApiResponse<List<BookDto>> { Success = true, Data = books };
@@ -50,7 +52,9 @@ namespace KitapTakipApi.Services
                     Genre = b.Genre,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
-                    Notes = b.Notes
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
                 }).FirstOrDefaultAsync();
 
             if (book == null)
@@ -72,6 +76,8 @@ namespace KitapTakipApi.Services
                 StartDate = bookDto.StartDate,
                 EndDate = bookDto.EndDate,
                 Notes = bookDto.Notes,
+                Description = bookDto.Description,
+                PageCount = bookDto.PageCount,
                 UserId = userId
             };
 
@@ -99,6 +105,8 @@ namespace KitapTakipApi.Services
             book.StartDate = bookDto.StartDate;
             book.EndDate = bookDto.EndDate;
             book.Notes = bookDto.Notes;
+            book.Description = bookDto.Description;
+            book.PageCount = bookDto.PageCount;
 
             await _context.SaveChangesAsync();
             return new ApiResponse<BookDto> { Success = true, Data = bookDto, Message = "Kitap güncellendi." };
@@ -125,7 +133,12 @@ namespace KitapTakipApi.Services
                     Id = b.Id,
                     Title = b.Title,
                     Author = b.Author,
-                    Genre = b.Genre
+                    Genre = b.Genre,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
                 })
                 .ToListAsync();
 
@@ -152,7 +165,9 @@ namespace KitapTakipApi.Services
                     Genre = b.Genre,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
-                    Notes = b.Notes
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
                 })
                 .ToListAsync();
 
@@ -179,7 +194,9 @@ namespace KitapTakipApi.Services
                     Genre = b.Genre,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
-                    Notes = b.Notes
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
                 })
                 .ToListAsync();
 
@@ -190,6 +207,7 @@ namespace KitapTakipApi.Services
                 Message = books.Any() ? $"Tür adına göre kitaplar getirildi: {genre}" : $"Tür adına uygun kitap bulunamadı: {genre}"
             };
         }
+
         public async Task<ApiResponse<List<BookDto>>> GetBooksByTitleAsync(string title)
         {
             if (string.IsNullOrEmpty(title))
@@ -205,7 +223,9 @@ namespace KitapTakipApi.Services
                     Genre = b.Genre,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
-                    Notes = b.Notes
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
                 })
                 .ToListAsync();
 

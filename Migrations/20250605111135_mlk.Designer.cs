@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KitapTakipApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250605105830_veritabanı")]
-    partial class veritabanı
+    [Migration("20250605111135_mlk")]
+    partial class mlk
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
