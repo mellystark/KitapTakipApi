@@ -116,5 +116,125 @@ namespace KitapTakipApi.Services
             await _context.SaveChangesAsync();
             return new ApiResponse<bool> { Success = true, Data = true, Message = "Kitap silindi." };
         }
+
+        public async Task<ApiResponse<List<BookDto>>> GetAllBooksAsync()
+        {
+            var books = await _context.Books
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Data = books,
+                Message = books.Any() ? "Tüm kitaplar başarıyla getirildi." : "Kayıtlı kitap bulunamadı."
+            };
+        }
+
+        public async Task<ApiResponse<List<BookDto>>> GetBooksByAuthorNameAsync(string authorName)
+        {
+            if (string.IsNullOrEmpty(authorName))
+                return new ApiResponse<List<BookDto>> { Success = false, Message = "Yazar adı belirtilmelidir." };
+
+            var books = await _context.Books
+                .Where(b => b.Author.ToLower().Contains(authorName.ToLower()))
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Notes = b.Notes
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Data = books,
+                Message = books.Any() ? $"Yazar adına göre kitaplar getirildi: {authorName}" : $"Yazar adına uygun kitap bulunamadı: {authorName}"
+            };
+        }
+
+        public async Task<ApiResponse<List<BookDto>>> GetBooksByGenreAsync(string genre)
+        {
+            if (string.IsNullOrEmpty(genre))
+                return new ApiResponse<List<BookDto>> { Success = false, Message = "Tür adı belirtilmelidir." };
+
+            var books = await _context.Books
+                .Where(b => b.Genre.ToLower().Contains(genre.ToLower()))
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Notes = b.Notes
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Data = books,
+                Message = books.Any() ? $"Tür adına göre kitaplar getirildi: {genre}" : $"Tür adına uygun kitap bulunamadı: {genre}"
+            };
+        }
+        public async Task<ApiResponse<List<BookDto>>> GetBooksByTitleAsync(string title)
+        {
+            if (string.IsNullOrEmpty(title))
+                return new ApiResponse<List<BookDto>> { Success = false, Message = "Kitap başlığı belirtilmelidir." };
+
+            var books = await _context.Books
+                .Where(b => b.Title.ToLower().Contains(title.ToLower()))
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Notes = b.Notes
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Data = books,
+                Message = books.Any() ? $"Başlığa göre kitaplar getirildi: {title}" : $"Başlığa uygun kitap bulunamadı: {title}"
+            };
+        }
+
+        public async Task<ApiResponse<BookDetailsDto>> GetBookDetailsByIdAsync(int id, string userId)
+        {
+            var book = await _context.Books
+                .Where(b => b.Id == id && b.UserId == userId)
+                .Select(b => new BookDetailsDto
+                {
+                    Title = b.Title,
+                    Author = b.Author,
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount
+                })
+                .FirstOrDefaultAsync();
+
+            if (book == null)
+                return new ApiResponse<BookDetailsDto> { Success = false, Message = "Kitap bulunamadı." };
+
+            return new ApiResponse<BookDetailsDto> { Success = true, Data = book };
+        }
     }
 }

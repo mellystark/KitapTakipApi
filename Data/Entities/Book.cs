@@ -10,5 +10,7 @@
         public DateTime? EndDate { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int PageCount { get; set; }
     }
 }

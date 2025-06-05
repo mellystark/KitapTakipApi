@@ -98,6 +98,20 @@ app.UseSwaggerUI(options =>
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/api/books/all", async (IBookService bookService) =>
+{
+    var response = await bookService.GetAllBooksAsync();
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).WithName("GetAllBooks").WithTags("Books");
+app.MapGet("/api/books/by-author", async (IBookService bookService, string authorName) =>
+{
+    var response = await bookService.GetBooksByAuthorNameAsync(authorName);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).WithName("GetBooksByAuthorName").WithTags("Books");
+app.MapGet("/api/books/by-genre", async (IBookService bookService, string genre) => { var response = await bookService.GetBooksByGenreAsync(genre); return response.Success ? Results.Ok(response) : Results.BadRequest(response); }).WithName("GetBooksByGenre").WithTags("Books");
+
+app.MapGet("/api/books/by-title", async (IBookService bookService, string title) => { var response = await bookService.GetBooksByTitleAsync(title); return response.Success ? Results.Ok(response) : Results.BadRequest(response); }).WithName("GetBooksByTitle").WithTags("Books");
+
 // Minimal API Endpoint'leri
 /// <summary>
 /// Yeni kullanýcý kaydý yapar.
@@ -160,6 +174,16 @@ app.MapGet("/api/books/{id}", async (int id, IBookService bookService, HttpConte
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("GetBookById").WithTags("Books");
 
+app.MapGet("/api/books/details/{id}", async (int id, IBookService bookService, HttpContext context) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId))
+        return Results.Unauthorized();
+
+    var response = await bookService.GetBookDetailsByIdAsync(id, userId);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).RequireAuthorization().WithName("GetBookDetailsById").WithTags("Books");
+
 /// <summary>
 /// Yeni bir kitap ekler.
 /// </summary>
@@ -198,5 +222,6 @@ app.MapDelete("/api/books/{id}", async (int id, IBookService bookService, HttpCo
     var response = await bookService.DeleteBookAsync(id, userId);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("DeleteBook").WithTags("Books");
+
 
 app.Run();
