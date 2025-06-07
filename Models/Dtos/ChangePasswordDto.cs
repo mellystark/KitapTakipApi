@@ -1,14 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace KitapTakipApi.Models.Dtos
-{
-    public class ChangePasswordDto
-    {
-        [Required(ErrorMessage = "Mevcut şifre zorunludur.")]
-        public string CurrentPassword { get; set; } = string.Empty;
+namespace KitapTakipApi.Dtos;
 
-        [Required(ErrorMessage = "Yeni şifre zorunludur.")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Yeni şifre 6-100 karakter arasında olmalıdır.")]
-        public string NewPassword { get; set; } = string.Empty;
-    }
+public class ChangePasswordDto
+{
+    [Required(ErrorMessage = "Mevcut şifre zorunludur.")]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Yeni şifre zorunludur.")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "Yeni şifre 6-100 karakter arasında olmalıdır.")]
+    public string NewPassword { get; set; } = string.Empty;
 }

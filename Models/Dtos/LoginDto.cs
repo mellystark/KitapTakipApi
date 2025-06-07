@@ -1,8 +1,12 @@
-﻿namespace KitapTakipApi.Models.Dtos
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace KitapTakipApi.Dtos;
+
+public class LoginDto
 {
-    public class LoginDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+    [Required(ErrorMessage = "Kullanıcı adı veya e-posta zorunludur.")]
+    public string UserNameOrEmail { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Şifre zorunludur.")]
+    public string Password { get; set; } = string.Empty;
 }

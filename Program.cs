@@ -1,11 +1,10 @@
 using KitapTakipApi.Data;
-using KitapTakipApi.Models.Dtos;
+using KitapTakipApi.Dtos;
 using KitapTakipApi.Models.Responses;
 using KitapTakipApi.Services;
 using KitapTakipApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -17,11 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Veritabaný baðlantýsý
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Identity yapýlandýrmasý
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
 
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -82,8 +76,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Servis kayýtlarý
-builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IBookService, BookService>();
 
 var app = builder.Build();
 
@@ -97,20 +91,6 @@ app.UseSwaggerUI(options =>
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapGet("/api/books/all", async (IBookService bookService) =>
-{
-    var response = await bookService.GetAllBooksAsync();
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-}).WithName("GetAllBooks").WithTags("Books");
-app.MapGet("/api/books/by-author", async (IBookService bookService, string authorName) =>
-{
-    var response = await bookService.GetBooksByAuthorNameAsync(authorName);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-}).WithName("GetBooksByAuthorName").WithTags("Books");
-app.MapGet("/api/books/by-genre", async (IBookService bookService, string genre) => { var response = await bookService.GetBooksByGenreAsync(genre); return response.Success ? Results.Ok(response) : Results.BadRequest(response); }).WithName("GetBooksByGenre").WithTags("Books");
-
-app.MapGet("/api/books/by-title", async (IBookService bookService, string title) => { var response = await bookService.GetBooksByTitleAsync(title); return response.Success ? Results.Ok(response) : Results.BadRequest(response); }).WithName("GetBooksByTitle").WithTags("Books");
 
 // Minimal API Endpoint'leri
 /// <summary>
@@ -139,73 +119,130 @@ app.MapPost("/api/auth/change-password", async (ChangePasswordDto changePassword
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
     {
-        Console.WriteLine("Unauthorized: userId not found in token.");
+        app.Logger.LogError("ChangePassword: userId not found in token.");
         return Results.Unauthorized();
     }
 
-    Console.WriteLine($"Change password request for userId: {userId}");
+    app.Logger.LogInformation($"ChangePassword: userId={userId}");
     var response = await authService.ChangePasswordAsync(changePasswordDto, userId);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("ChangePassword").WithTags("Auth");
 
 /// <summary>
-/// Kullanýcýnýn kitaplarýný listeler (isteðe baðlý tür ve yazar filtresiyle).
+/// Kullanýcýnýn tüm kitaplarýný listeler.
 /// </summary>
-app.MapGet("/api/books", async (IBookService bookService, HttpContext context, string? genre = null, string? author = null) =>
+app.MapGet("/api/books", async (IBookService bookService, HttpContext context) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("GetBooks: userId not found in token.");
         return Results.Unauthorized();
+    }
 
-    var response = await bookService.GetBooksAsync(userId, genre, author);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+    app.Logger.LogInformation($"GetBooks: userId={userId}");
+    var response = await bookService.GetBooksAsync(userId);
+    return response.Success ? Results.Ok(response) : Results.NotFound(response);
 }).RequireAuthorization().WithName("GetBooks").WithTags("Books");
 
 /// <summary>
-/// ID'ye göre tek bir kitabý getirir.
+/// ID'ye göre bir kitabý getirir.
 /// </summary>
 app.MapGet("/api/books/{id}", async (int id, IBookService bookService, HttpContext context) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("GetBookById: userId not found in token.");
         return Results.Unauthorized();
+    }
 
+    app.Logger.LogInformation($"GetBookById: id={id}, userId={userId}");
     var response = await bookService.GetBookByIdAsync(id, userId);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+    return response.Success ? Results.Ok(response) : Results.NotFound(response);
 }).RequireAuthorization().WithName("GetBookById").WithTags("Books");
 
-app.MapGet("/api/books/details/{id}", async (int id, IBookService bookService, HttpContext context) =>
+/// <summary>
+/// Yazar adýna göre kullanýcýnýn kitaplarýný getirir.
+/// </summary>
+app.MapGet("/api/books/by-author", async (IBookService bookService, HttpContext context, string authorName) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("GetBooksByAuthorName: userId not found in token.");
         return Results.Unauthorized();
+    }
 
-    var response = await bookService.GetBookDetailsByIdAsync(id, userId);
+    app.Logger.LogInformation($"GetBooksByAuthorName: authorName={authorName}, userId={userId}");
+    var response = await bookService.GetBooksByAuthorNameAsync(userId, authorName);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-}).RequireAuthorization().WithName("GetBookDetailsById").WithTags("Books");
+}).RequireAuthorization().WithName("GetBooksByAuthorName").WithTags("Books");
+
+/// <summary>
+/// Tür adýna göre kullanýcýnýn kitaplarýný getirir.
+/// </summary>
+app.MapGet("/api/books/by-genre", async (IBookService bookService, HttpContext context, string genre) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("GetBooksByGenre: userId not found in token.");
+        return Results.Unauthorized();
+    }
+
+    app.Logger.LogInformation($"GetBooksByGenre: genre={genre}, userId={userId}");
+    var response = await bookService.GetBooksByGenreAsync(userId, genre);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).RequireAuthorization().WithName("GetBooksByGenre").WithTags("Books");
+
+/// <summary>
+/// Baþlýða göre kullanýcýnýn kitaplarýný getirir.
+/// </summary>
+app.MapGet("/api/books/by-title", async (IBookService bookService, HttpContext context, string title) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("GetBooksByTitle: userId not found in token.");
+        return Results.Unauthorized();
+    }
+
+    app.Logger.LogInformation($"GetBooksByTitle: title={title}, userId={userId}");
+    var response = await bookService.GetBooksByTitleAsync(userId, title);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).RequireAuthorization().WithName("GetBooksByTitle").WithTags("Books");
 
 /// <summary>
 /// Yeni bir kitap ekler.
 /// </summary>
-app.MapPost("/api/books", async (BookDto bookDto, IBookService bookService, HttpContext context) =>
+app.MapPost("/api/books", async (BookCreateDto bookDto, IBookService bookService, HttpContext context) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("AddBook: userId not found in token.");
         return Results.Unauthorized();
+    }
 
+    app.Logger.LogInformation($"AddBook: userId={userId}, bookTitle={bookDto.Title}");
     var response = await bookService.AddBookAsync(bookDto, userId);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+    return response.Success ? Results.Created($"/api/books/{response.Data?.Id}", response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("AddBook").WithTags("Books");
 
 /// <summary>
 /// Mevcut bir kitabý günceller.
 /// </summary>
-app.MapPut("/api/books/{id}", async (int id, BookDto bookDto, IBookService bookService, HttpContext context) =>
+app.MapPut("/api/books/{id}", async (int id, BookUpdateDto bookDto, IBookService bookService, HttpContext context) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("UpdateBook: userId not found in token.");
         return Results.Unauthorized();
+    }
 
+    app.Logger.LogInformation($"UpdateBook: id={id}, userId={userId}");
     var response = await bookService.UpdateBookAsync(id, bookDto, userId);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("UpdateBook").WithTags("Books");
@@ -217,11 +254,14 @@ app.MapDelete("/api/books/{id}", async (int id, IBookService bookService, HttpCo
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId))
+    {
+        app.Logger.LogError("DeleteBook: userId not found in token.");
         return Results.Unauthorized();
+    }
 
+    app.Logger.LogInformation($"DeleteBook: id={id}, userId={userId}");
     var response = await bookService.DeleteBookAsync(id, userId);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+    return response.Success ? Results.Ok(response) : Results.NotFound(response);
 }).RequireAuthorization().WithName("DeleteBook").WithTags("Books");
-
 
 app.Run();
