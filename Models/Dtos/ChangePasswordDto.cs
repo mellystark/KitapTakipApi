@@ -4,6 +4,9 @@ namespace KitapTakipApi.Dtos;
 
 public class ChangePasswordDto
 {
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
+    public string UserName { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Mevcut şifre zorunludur.")]
     public string CurrentPassword { get; set; } = string.Empty;
 

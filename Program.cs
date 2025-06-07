@@ -114,17 +114,9 @@ app.MapPost("/api/auth/login", async (LoginDto loginDto, IAuthService authServic
 /// <summary>
 /// Kullanýcýnýn þifresini deðiþtirir.
 /// </summary>
-app.MapPost("/api/auth/change-password", async (ChangePasswordDto changePasswordDto, IAuthService authService, HttpContext context) =>
+app.MapPost("/api/auth/change-password", async (ChangePasswordDto changePasswordDto, IAuthService authService) =>
 {
-    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (string.IsNullOrEmpty(userId))
-    {
-        app.Logger.LogError("ChangePassword: userId not found in token.");
-        return Results.Unauthorized();
-    }
-
-    app.Logger.LogInformation($"ChangePassword: userId={userId}");
-    var response = await authService.ChangePasswordAsync(changePasswordDto, userId);
+    var response = await authService.ChangePasswordAsync(changePasswordDto);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("ChangePassword").WithTags("Auth");
 

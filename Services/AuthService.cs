@@ -69,14 +69,14 @@ public class AuthService : IAuthService
         return new ApiResponse<string> { Success = true, Data = token, Message = "Giriş başarılı." };
     }
 
-    public async Task<ApiResponse<string>> ChangePasswordAsync(ChangePasswordDto changePasswordDto, string userId)
+    public async Task<ApiResponse<string>> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
     {
-        if (string.IsNullOrEmpty(changePasswordDto.CurrentPassword) || string.IsNullOrEmpty(changePasswordDto.NewPassword))
-            return new ApiResponse<string> { Success = false, Message = "Mevcut ve yeni şifre alanları zorunludur." };
+        if (string.IsNullOrEmpty(changePasswordDto.UserName) || string.IsNullOrEmpty(changePasswordDto.CurrentPassword) || string.IsNullOrEmpty(changePasswordDto.NewPassword))
+            return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı, mevcut ve yeni şifre alanları zorunludur." };
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == changePasswordDto.UserName);
         if (user == null)
-            return new ApiResponse<string> { Success = false, Message = $"Kullanıcı bulunamadı: userId={userId}" };
+            return new ApiResponse<string> { Success = false, Message = $"Kullanıcı bulunamadı: UserName={changePasswordDto.UserName}" };
 
         if (!BCrypt.Net.BCrypt.Verify(changePasswordDto.CurrentPassword, user.PasswordHash))
             return new ApiResponse<string> { Success = false, Message = "Mevcut şifre yanlış." };
@@ -85,7 +85,7 @@ public class AuthService : IAuthService
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation($"Şifre değiştirildi: UserId={userId}");
+        _logger.LogInformation($"Şifre değiştirildi: UserName={changePasswordDto.UserName}");
         return new ApiResponse<string> { Success = true, Message = "Şifre başarıyla değiştirildi." };
     }
 
