@@ -18,7 +18,9 @@ public class User
 
     [Required(ErrorMessage = "Şifre hash'i zorunludur.")]
     public string PasswordHash { get; set; } = string.Empty;
+	[Required(ErrorMessage = "Rol zorunludur.")]
+	public string Role { get; set; } = "User";
 
-    // Navigation property for Books
-    public List<Book> Books { get; set; } = new List<Book>();
+	// Navigation property for Books
+	public List<Book> Books { get; set; } = new List<Book>();
 }
