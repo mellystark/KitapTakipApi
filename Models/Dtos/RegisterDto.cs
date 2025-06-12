@@ -15,4 +15,5 @@ public class RegisterDto
     [Required(ErrorMessage = "Şifre zorunludur.")]
     [StringLength(100, MinimumLength = 6, ErrorMessage = "Şifre 6-100 karakter arasında olmalıdır.")]
     public string Password { get; set; } = string.Empty;
+    public string? Role { get; set; }
 }

@@ -1,16 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+﻿using KitapTakipApi.Data;
+using KitapTakipApi.Dtos;
+using KitapTakipApi.Models;
+using KitapTakipApi.Models.Dtos;
+using KitapTakipApi.Models.Responses;
+using KitapTakipApi.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BCrypt.Net;
-using KitapTakipApi.Data;
-using KitapTakipApi.Dtos;
-using KitapTakipApi.Models.Responses;
-using KitapTakipApi.Models;
-using KitapTakipApi.Services.Interfaces;
-using KitapTakipApi.Models.Dtos;
 
 namespace KitapTakipApi.Services;
 
@@ -27,15 +26,34 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
+
+
+
     public async Task<ApiResponse<string>> RegisterAsync(RegisterDto registerDto)
     {
-        if (string.IsNullOrEmpty(registerDto.UserName) || string.IsNullOrEmpty(registerDto.Email) || string.IsNullOrEmpty(registerDto.Password))
+        if (string.IsNullOrEmpty(registerDto.UserName) ||
+            string.IsNullOrEmpty(registerDto.Email) ||
+            string.IsNullOrEmpty(registerDto.Password))
+        {
             return new ApiResponse<string> { Success = false, Message = "Zorunlu alanlar doldurulmalıdır." };
+        }
 
         var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.UserName == registerDto.UserName || u.Email == registerDto.Email);
         if (existingUser != null)
+        {
             return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı veya e-posta zaten kullanılıyor." };
+        }
+
+        // Rolü kontrol et, boşsa "User" olarak ata
+        string assignedRole = string.IsNullOrEmpty(registerDto.Role) ? "User" : registerDto.Role;
+
+        // Sadece "Admin" ve "User" rollerine izin ver
+        if (!string.Equals(assignedRole, "Admin", StringComparison.OrdinalIgnoreCase) &&
+    !string.Equals(assignedRole, "User", StringComparison.OrdinalIgnoreCase))
+        {
+            return new ApiResponse<string> { Success = false, Message = "Geçersiz rol. Sadece 'Admin' veya 'User' rollerine izin verilir." };
+        }
 
         var user = new User
         {
@@ -43,43 +61,47 @@ public class AuthService : IAuthService
             UserName = registerDto.UserName,
             Email = registerDto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-            Role = "User"
+            Role = assignedRole
         };
 
-        _logger.LogInformation($"Kullanıcı kaydediliyor: UserName={registerDto.UserName}, UserId={user.Id}");
+        _logger.LogInformation($"Kullanıcı kaydediliyor: UserName={registerDto.UserName}, UserId={user.Id}, Role={assignedRole}");
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return new ApiResponse<string> { Success = true, Message = "Kullanıcı kaydedildi." };
+        return new ApiResponse<string> { Success = true, Message = $"{assignedRole} kullanıcı kaydedildi." };
     }
 
-    public async Task<ApiResponse<string>> RegisterAdminAsync(RegisterDto registerDto)
-    {
-        if (string.IsNullOrEmpty(registerDto.UserName) || string.IsNullOrEmpty(registerDto.Email) || string.IsNullOrEmpty(registerDto.Password))
-            return new ApiResponse<string> { Success = false, Message = "Zorunlu alanlar doldurulmalıdır." };
 
-        var existingUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.UserName == registerDto.UserName || u.Email == registerDto.Email);
-        if (existingUser != null)
-            return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı veya e-posta zaten kullanılıyor." };
 
-        var user = new User
-        {
-            Id = Guid.NewGuid().ToString(),
-            UserName = registerDto.UserName,
-            Email = registerDto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-            Role = "Admin"
-        };
 
-        _logger.LogInformation($"Admin kaydediliyor: UserName={registerDto.UserName}, UserId={user.Id}");
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+    //public async Task<ApiResponse<string>> RegisterAdminAsync(RegisterDto registerDto)
+    //{
+    //    if (string.IsNullOrEmpty(registerDto.UserName) || string.IsNullOrEmpty(registerDto.Email) || string.IsNullOrEmpty(registerDto.Password))
+    //        return new ApiResponse<string> { Success = false, Message = "Zorunlu alanlar doldurulmalıdır." };
 
-        return new ApiResponse<string> { Success = true, Message = "Admin kaydedildi." };
-    }
+    //    var existingUser = await _context.Users
+    //        .FirstOrDefaultAsync(u => u.UserName == registerDto.UserName || u.Email == registerDto.Email);
+    //    if (existingUser != null)
+    //        return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı veya e-posta zaten kullanılıyor." };
+
+    //    var user = new User
+    //    {
+    //        Id = Guid.NewGuid().ToString(),
+    //        UserName = registerDto.UserName,
+    //        Email = registerDto.Email,
+    //        PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+    //        Role = "Admin"
+    //    };
+
+    //    _logger.LogInformation($"Admin kaydediliyor: UserName={registerDto.UserName}, UserId={user.Id}");
+
+    //    _context.Users.Add(user);
+    //    await _context.SaveChangesAsync();
+
+    //    return new ApiResponse<string> { Success = true, Message = "Admin kaydedildi." };
+    //}
 
     public async Task<ApiResponse<string>> LoginAsync(LoginDto loginDto)
     {
@@ -149,28 +171,44 @@ public class AuthService : IAuthService
         return new ApiResponse<string> { Success = true, Message = "Kullanıcı başarıyla silindi." };
     }
 
-    public async Task<ApiResponse<string>> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string userId)
+    public async Task<ApiResponse<string>> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string userName)
     {
         if (string.IsNullOrEmpty(updateProfileDto.UserName) || string.IsNullOrEmpty(updateProfileDto.Email))
+        {
             return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı ve e-posta alanları zorunludur." };
+        }
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        // userName ile kullanıcı bul
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
         if (user == null)
-            return new ApiResponse<string> { Success = false, Message = $"Kullanıcı bulunamadı: UserId={userId}" };
+        {
+            return new ApiResponse<string> { Success = false, Message = $"Kullanıcı bulunamadı: UserName={userName}" };
+        }
 
+        // Aynı UserName veya Email başka kullanıcıda var mı kontrol et
         var existingUser = await _context.Users
-            .FirstOrDefaultAsync(u => (u.UserName == updateProfileDto.UserName || u.Email == updateProfileDto.Email) && u.Id != userId);
+        .FirstOrDefaultAsync(u =>
+            (u.UserName.ToLower() == updateProfileDto.UserName.ToLower() ||
+             u.Email.ToLower() == updateProfileDto.Email.ToLower()) &&
+            u.Id != user.Id);
+
+
         if (existingUser != null)
+        {
             return new ApiResponse<string> { Success = false, Message = "Kullanıcı adı veya e-posta zaten kullanılıyor." };
+        }
 
         user.UserName = updateProfileDto.UserName;
         user.Email = updateProfileDto.Email;
+
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation($"Profil güncellendi: UserName={user.UserName}, UserId={user.Id}");
+
         return new ApiResponse<string> { Success = true, Message = "Profil başarıyla güncellendi." };
     }
+
 
     public async Task<ApiResponse<List<UserDto>>> GetAllUsersAsync()
     {

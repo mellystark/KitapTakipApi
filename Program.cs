@@ -102,16 +102,22 @@ app.MapPost("/api/auth/register", async (RegisterDto registerDto, IAuthService a
 {
     var response = await authService.RegisterAsync(registerDto);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-}).WithName("Register").WithTags("Auth");
+})
+.WithName("Register")
+.WithTags("Auth")
+.AllowAnonymous();  // Bu satýr yoksa Swagger bazen endpoint'i gizleyebilir
+
+
+
 
 /// <summary>
 /// Yeni admin kaydý yapar.
 /// </summary>
-app.MapPost("/api/auth/register-admin", async (RegisterDto registerDto, IAuthService authService) =>
-{
-    var response = await authService.RegisterAdminAsync(registerDto);
-    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-}).WithName("RegisterAdmin").WithTags("Auth");
+//app.MapPost("/api/auth/register-admin", async (RegisterDto registerDto, IAuthService authService) =>
+//{
+//    var response = await authService.RegisterAdminAsync(registerDto);
+//    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+//}).WithName("RegisterAdmin").WithTags("Auth");
 
 /// <summary>
 /// Kullanýcý giriþi yapar ve JWT token döndürür.
