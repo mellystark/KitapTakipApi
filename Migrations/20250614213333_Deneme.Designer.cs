@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KitapTakipApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250610142234_adminn")]
-    partial class adminn
+    [Migration("20250614213333_Deneme")]
+    partial class Deneme
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,6 +37,10 @@ namespace KitapTakipApi.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CoverImage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)

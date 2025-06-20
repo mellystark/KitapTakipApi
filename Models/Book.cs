@@ -36,4 +36,6 @@ public class Book
 
     // Navigation property for EF Core
     public User User { get; set; } = null!;
+    [StringLength(500, ErrorMessage = "Kapak resmi yolu 500 karakterden uzun olamaz.")]
+    public string? CoverImage { get; set; }
 }

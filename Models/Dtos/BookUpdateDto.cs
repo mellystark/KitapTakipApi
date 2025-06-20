@@ -21,4 +21,9 @@ public class BookUpdateDto
 
     [StringLength(500, ErrorMessage = "Notlar 500 karakterden uzun olamaz.")]
     public string? Notes { get; set; }
+    public string? CoverImage { get; set; }
+
+    [StringLength(1000, ErrorMessage = "Açıklama 1000 karakterden uzun olamaz.")]
+    public string? Description { get; set; }
+    public int? PageCount { get; set; }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KitapTakipApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250610120833_y")]
-    partial class y
+    [Migration("20250614211708_M")]
+    partial class M
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

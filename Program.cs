@@ -249,6 +249,13 @@ app.MapGet("/api/books/by-genre", async (IBookService bookService, HttpContext c
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).RequireAuthorization().WithName("GetBooksByGenre").WithTags("Books");
 
+
+app.MapGet("/api/books/all", async (IBookService bookService) =>
+{
+    var response = await bookService.GetAllBooksAsync();
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).AllowAnonymous().WithName("GetAllBooks").WithTags("Books");
+
 /// <summary>
 /// Baþlýða göre kullanýcýnýn kitaplarýný getirir.
 /// </summary>

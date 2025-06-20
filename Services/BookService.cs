@@ -20,6 +20,40 @@ public class BookService : IBookService
         _logger = logger;
     }
 
+
+    public async Task<ApiResponse<List<BookDto>>> GetAllBooksAsync()
+    {
+        try
+        {
+            var books = await _context.Books
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre,
+                    CoverImage = b.CoverImage,
+                    Description = b.Description
+                }).ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Message = "Tüm kitaplar başarıyla getirildi.",
+                Data = books
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = false,
+                Message = $"Hata oluştu: {ex.Message}",
+                Data = null
+            };
+        }
+    }
+
     public async Task<ApiResponse<List<BookDto>>> GetBooksAsync(string userName)
     {
         try
@@ -46,6 +80,7 @@ public class BookService : IBookService
                     Notes = b.Notes,
                     Description = b.Description,
                     PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
                     UserId = b.UserId
                 })
                 .ToListAsync();
@@ -94,6 +129,7 @@ public class BookService : IBookService
                     Notes = b.Notes,
                     Description = b.Description,
                     PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
                     UserId = b.UserId
                 })
                 .FirstOrDefaultAsync();
@@ -120,7 +156,6 @@ public class BookService : IBookService
         {
             _logger.LogInformation($"AddBookAsync: userName={userName}, bookTitle={bookDto.Title}");
 
-            // Kullanıcıyı userName'e göre bul
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
             if (user == null)
             {
@@ -138,7 +173,10 @@ public class BookService : IBookService
                 Author = bookDto.Author,
                 Genre = bookDto.Genre,
                 Notes = bookDto.Notes,
-                UserId = user.Id // Users.Id'yi kullan
+                Description = bookDto.Description,
+                PageCount = bookDto.PageCount,
+                CoverImage = bookDto.CoverImage,
+                UserId = user.Id
             };
 
             _context.Books.Add(book);
@@ -151,6 +189,9 @@ public class BookService : IBookService
                 Author = book.Author,
                 Genre = book.Genre,
                 Notes = book.Notes,
+                Description = book.Description,
+                PageCount = book.PageCount,
+                CoverImage = book.CoverImage,
                 UserId = book.UserId
             };
 
@@ -208,6 +249,9 @@ public class BookService : IBookService
             book.Author = bookDto.Author;
             book.Genre = bookDto.Genre;
             book.Notes = bookDto.Notes;
+            book.Description = bookDto.Description;
+            book.PageCount = bookDto.PageCount;
+            book.CoverImage = bookDto.CoverImage;
 
             await _context.SaveChangesAsync();
 
@@ -222,6 +266,7 @@ public class BookService : IBookService
                 Notes = book.Notes,
                 Description = book.Description,
                 PageCount = book.PageCount,
+                CoverImage = book.CoverImage,
                 UserId = book.UserId
             };
 
@@ -314,6 +359,7 @@ public class BookService : IBookService
                     Notes = b.Notes,
                     Description = b.Description,
                     PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
                     UserId = b.UserId
                 })
                 .ToListAsync();
@@ -365,6 +411,7 @@ public class BookService : IBookService
                     Notes = b.Notes,
                     Description = b.Description,
                     PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
                     UserId = b.UserId
                 })
                 .ToListAsync();
@@ -416,6 +463,7 @@ public class BookService : IBookService
                     Notes = b.Notes,
                     Description = b.Description,
                     PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
                     UserId = b.UserId
                 })
                 .ToListAsync();

@@ -6,6 +6,7 @@ namespace KitapTakipApi.Services.Interfaces;
 
 public interface IBookService
 {
+    Task<ApiResponse<List<BookDto>>> GetAllBooksAsync();
     Task<ApiResponse<List<BookDto>>> GetBooksAsync(string userName);
     Task<ApiResponse<BookDto>> GetBookByIdAsync(int id, string userName);
     Task<ApiResponse<BookDto>> AddBookAsync(BookCreateDto bookDto, string userName);
