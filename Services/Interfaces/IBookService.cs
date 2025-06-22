@@ -1,6 +1,7 @@
 ﻿using KitapTakipApi.Dtos;
 using KitapTakipApi.Models.Dtos;
 using KitapTakipApi.Models.Responses;
+using System.Collections.Generic;
 
 namespace KitapTakipApi.Services.Interfaces;
 
@@ -15,4 +16,5 @@ public interface IBookService
     Task<ApiResponse<List<BookDto>>> GetBooksByAuthorNameAsync(string userName, string authorName);
     Task<ApiResponse<List<BookDto>>> GetBooksByGenreAsync(string userName, string genre);
     Task<ApiResponse<List<BookDto>>> GetBooksByTitleAsync(string userName, string title);
+    Task<ApiResponse<List<BookDto>>> GetReadBooksAsync(string userName, string title = "");
 }

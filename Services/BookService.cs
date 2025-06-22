@@ -20,7 +20,6 @@ public class BookService : IBookService
         _logger = logger;
     }
 
-
     public async Task<ApiResponse<List<BookDto>>> GetAllBooksAsync()
     {
         try
@@ -33,7 +32,10 @@ public class BookService : IBookService
                     Author = b.Author,
                     Genre = b.Genre,
                     CoverImage = b.CoverImage,
-                    Description = b.Description
+                    Description = b.Description,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading,
+                    UpdatedDate = b.UpdatedDate,
                 }).ToListAsync();
 
             return new ApiResponse<List<BookDto>>
@@ -81,7 +83,9 @@ public class BookService : IBookService
                     Description = b.Description,
                     PageCount = b.PageCount,
                     CoverImage = b.CoverImage,
-                    UserId = b.UserId
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
                 })
                 .ToListAsync();
 
@@ -117,7 +121,7 @@ public class BookService : IBookService
             }
 
             var book = await _context.Books
-                .Where(b => b.Id == id && b.UserId == user.Id)
+                .Where(b => b.Id == id)
                 .Select(b => new BookDto
                 {
                     Id = b.Id,
@@ -130,7 +134,9 @@ public class BookService : IBookService
                     Description = b.Description,
                     PageCount = b.PageCount,
                     CoverImage = b.CoverImage,
-                    UserId = b.UserId
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
                 })
                 .FirstOrDefaultAsync();
 
@@ -176,7 +182,9 @@ public class BookService : IBookService
                 Description = bookDto.Description,
                 PageCount = bookDto.PageCount,
                 CoverImage = bookDto.CoverImage,
-                UserId = user.Id
+                UserId = user.Id,
+                CreatedDate = DateTime.UtcNow,
+                IsReading = bookDto.IsReading
             };
 
             _context.Books.Add(book);
@@ -192,10 +200,12 @@ public class BookService : IBookService
                 Description = book.Description,
                 PageCount = book.PageCount,
                 CoverImage = book.CoverImage,
-                UserId = book.UserId
+                UserId = book.UserId,
+                CreatedDate = book.CreatedDate,
+                IsReading = book.IsReading
             };
 
-            _logger.LogInformation($"AddBookAsync: Kitap eklendi, Id={book.Id}, userName={userName}, UserId={user.Id}");
+            _logger.LogInformation($"AddBookAsync: Kitap eklendi, Id={book.Id}, userName={userName}, UserId={user.Id}, CreatedDate={book.CreatedDate}, IsReading={book.IsReading}");
             return new ApiResponse<BookDto>
             {
                 Success = true,
@@ -249,9 +259,13 @@ public class BookService : IBookService
             book.Author = bookDto.Author;
             book.Genre = bookDto.Genre;
             book.Notes = bookDto.Notes;
+            book.StartDate = bookDto.StartDate;
+            book.EndDate = bookDto.EndDate;
             book.Description = bookDto.Description;
             book.PageCount = bookDto.PageCount;
             book.CoverImage = bookDto.CoverImage;
+            book.IsReading = bookDto.IsReading;
+            book.UpdatedDate = DateTime.UtcNow; // Set update timestamp
 
             await _context.SaveChangesAsync();
 
@@ -267,10 +281,13 @@ public class BookService : IBookService
                 Description = book.Description,
                 PageCount = book.PageCount,
                 CoverImage = book.CoverImage,
-                UserId = book.UserId
+                UserId = book.UserId,
+                CreatedDate = book.CreatedDate,
+                IsReading = book.IsReading,
+                UpdatedDate = book.UpdatedDate // Include updated date
             };
 
-            _logger.LogInformation($"UpdateBookAsync: Kitap güncellendi, Id={id}, userName={userName}");
+            _logger.LogInformation($"UpdateBookAsync: Kitap güncellendi, Id={book.Id}, userName={userName}, IsReading={book.IsReading}, UpdatedDate={book.UpdatedDate}");
             return new ApiResponse<BookDto>
             {
                 Success = true,
@@ -360,7 +377,9 @@ public class BookService : IBookService
                     Description = b.Description,
                     PageCount = b.PageCount,
                     CoverImage = b.CoverImage,
-                    UserId = b.UserId
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
                 })
                 .ToListAsync();
 
@@ -381,6 +400,7 @@ public class BookService : IBookService
             };
         }
     }
+
 
     public async Task<ApiResponse<List<BookDto>>> GetBooksByGenreAsync(string userName, string genre)
     {
@@ -412,7 +432,9 @@ public class BookService : IBookService
                     Description = b.Description,
                     PageCount = b.PageCount,
                     CoverImage = b.CoverImage,
-                    UserId = b.UserId
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
                 })
                 .ToListAsync();
 
@@ -464,7 +486,9 @@ public class BookService : IBookService
                     Description = b.Description,
                     PageCount = b.PageCount,
                     CoverImage = b.CoverImage,
-                    UserId = b.UserId
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
                 })
                 .ToListAsync();
 
@@ -482,6 +506,64 @@ public class BookService : IBookService
             {
                 Success = false,
                 Message = $"Başlığa göre kitaplar getirilirken bir hata oluştu: {ex.Message}"
+            };
+        }
+    }
+
+    public async Task<ApiResponse<List<BookDto>>> GetReadBooksAsync(string userName, string title = "")
+    {
+        try
+        {
+            _logger.LogInformation($"GetReadBooksAsync: userName={userName}, title={title}");
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (user == null)
+            {
+                _logger.LogError($"GetReadBooksAsync: Kullanıcı bulunamadı, userName={userName}");
+                return new ApiResponse<List<BookDto>> { Success = false, Message = $"Kullanıcı bulunamadı: {userName}" };
+            }
+
+            var query = _context.Books
+                .Where(b => b.UserId == user.Id && b.IsReading);
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                query = query.Where(b => b.Title.ToLower().Contains(title.ToLower()));
+            }
+
+            var books = await query
+                .Select(b => new BookDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Author = b.Author,
+                    Genre = b.Genre,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Notes = b.Notes,
+                    Description = b.Description,
+                    PageCount = b.PageCount,
+                    CoverImage = b.CoverImage,
+                    UserId = b.UserId,
+                    CreatedDate = b.CreatedDate,
+                    IsReading = b.IsReading
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = true,
+                Data = books,
+                Message = books.Any() ? "Okunan kitaplar başarıyla getirildi." : "Okunan kitap bulunamadı."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"GetReadBooksAsync: userName={userName}, title={title}, hata={ex.Message}");
+            return new ApiResponse<List<BookDto>>
+            {
+                Success = false,
+                Message = $"Okunan kitaplar getirilirken hata oluştu: {ex.Message}"
             };
         }
     }

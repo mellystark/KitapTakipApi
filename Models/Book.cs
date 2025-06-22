@@ -38,4 +38,7 @@ public class Book
     public User User { get; set; } = null!;
     [StringLength(500, ErrorMessage = "Kapak resmi yolu 500 karakterden uzun olamaz.")]
     public string? CoverImage { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public bool IsReading { get; set; } = false;
+    public DateTime? UpdatedDate { get; set; }
 }

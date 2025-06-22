@@ -324,4 +324,16 @@ app.MapDelete("/api/books/{id}", async (int id, IBookService bookService, HttpCo
     return response.Success ? Results.Ok(response) : Results.NotFound(response);
 }).RequireAuthorization().WithName("DeleteBook").WithTags("Books");
 
+app.MapGet("/api/books/read", async (IBookService bookService, string username, string? title = "") =>
+{
+    if (string.IsNullOrEmpty(username))
+        return Results.BadRequest(new ApiResponse<List<BookDto>> { Success = false, Message = "Kullanýcý adý belirtilmelidir." });
+
+    var response = await bookService.GetReadBooksAsync(username, title);
+    return Results.Ok(response);
+})
+.RequireAuthorization()
+.WithName("GetReadBooks")
+.WithTags("Books");
+
 app.Run();

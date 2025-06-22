@@ -18,6 +18,8 @@ public class BookUpdateDto
     [Required(ErrorMessage = "Tür zorunludur.")]
     [StringLength(50, ErrorMessage = "Tür 50 karakterden uzun olamaz.")]
     public string Genre { get; set; } = string.Empty;
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     [StringLength(500, ErrorMessage = "Notlar 500 karakterden uzun olamaz.")]
     public string? Notes { get; set; }
@@ -26,4 +28,6 @@ public class BookUpdateDto
     [StringLength(1000, ErrorMessage = "Açıklama 1000 karakterden uzun olamaz.")]
     public string? Description { get; set; }
     public int? PageCount { get; set; }
+    public bool IsReading { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 }

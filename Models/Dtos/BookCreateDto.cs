@@ -23,4 +23,6 @@ public class BookCreateDto
     public string? Description { get; set; }
     public string? CoverImage { get; set; }
     public int? PageCount { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public bool IsReading { get; set; }
 }
